@@ -1,0 +1,7 @@
+ConvertFrom-Json : Invalid JSON primitive: System.IO.TextReader+SyncTextReader.
+At line:1 char:17
++ [Console]::In | ConvertFrom-Json | Select-Object -First 3 | ForEach-O ...
++                 ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [ConvertFrom-Json], ArgumentException
+    + FullyQualifiedErrorId : System.ArgumentException,Microsoft.PowerShell.Commands.ConvertFromJsonCommand
+ 
