@@ -67,7 +67,7 @@ export default function OrderPage() {
       // Build order data matching Printify API requirements
       const orderData = {
         line_items: cart.map((item) => ({
-          product_id: item.id.toString(),
+          product_id: item.id,
           variant_id: item.id,
           quantity: item.quantity,
         })),
@@ -76,12 +76,12 @@ export default function OrderPage() {
           first_name: form.first_name,
           last_name: form.last_name,
           email: form.email,
-          phone: form.phone,
+          phone: form.phone || '',
           address1: form.address1,
-          address2: form.address2,
+          address2: form.address2 || '',
           city: form.city,
           region: form.region,
-          postal_code: form.zip,
+          zip: form.zip,
           country: form.country,
         },
       };
@@ -92,14 +92,19 @@ export default function OrderPage() {
         throw new Error(orderResponse.error || 'Failed to create order');
       }
 
-      const data = orderResponse.data;
-      setResult(data);
-      clearCart();
-      
-      // Redirect to order detail page after short delay
-      setTimeout(() => {
-        router.push(`/shop/order/${data.id}`);
-      }, 1500);
+      const order = orderResponse.data;
+
+      if (order && order.id) {
+        setResult(order);
+        clearCart();
+        
+        // Redirect to order detail page after short delay
+        setTimeout(() => {
+          router.push(`/shop/order/${order.id}`);
+        }, 1500);
+      } else {
+        throw new Error('Failed to create Printify order');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit order');
     }
