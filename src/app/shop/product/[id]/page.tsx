@@ -206,6 +206,7 @@ export default function ProductDetailPage() {
               <Button
                 onClick={() => selectedVariant && addToCart({
                   id: parseInt(product.id, 10),
+                  productId: product.id,  // Store the actual Printify product ID
                   variantId: selectedVariant,
                   title: product.title,
                   price: selectedPrice,

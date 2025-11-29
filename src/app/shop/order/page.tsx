@@ -52,29 +52,24 @@ export default function OrderPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormErrors({});
+    setError(null);
 
     if (!validateForm()) {
       return;
     }
 
-    if (cart.length === 0) {
-      setError('Cart is empty');
-      return;
-    }
-
-    setError(null);
-    
     try {
-      // Build order data matching Printify API requirements
-      const lineItems = cart.map((item) => ({
-        product_id: item.id,
-        variant_id: item.variantId,
-        quantity: item.quantity,
-      }));
+      // Validate all cart items have product IDs
+      const itemsWithoutProductId = cart.filter(item => !item.productId);
+      if (itemsWithoutProductId.length > 0) {
+        setError('Some items in your cart are missing product information. Please clear your cart and re-add items.');
+        return;
+      }
 
-      const shippingLineItems = lineItems.map((item) => ({
-        product_id: String(item.product_id),
-        variant_id: item.variant_id,
+      // Calculate shipping first
+      const shippingLineItems = cart.map((item) => ({
+        product_id: item.productId as string,
+        variant_id: item.variantId,
         quantity: item.quantity,
       }));
 
@@ -83,52 +78,43 @@ export default function OrderPage() {
         last_name: form.last_name,
         email: form.email,
         phone: form.phone || '',
+        country: form.country,
+        region: form.region,
         address1: form.address1,
         address2: form.address2 || '',
         city: form.city,
-        region: form.region,
         zip: form.zip,
-        country: form.country,
       };
 
-      // First calculate shipping to validate address (same as campaigns)
-      const shippingResponse = await calculateShipping(
-        shippingLineItems,
-        addressTo
-      );
-
-      const orderData = {
-        line_items: lineItems,
-        shipping_method: 1,
-        address_to: addressTo,
-      };
+      const shippingResponse = await calculateShipping(shippingLineItems, addressTo);
 
       if (!shippingResponse.success) {
-        throw new Error(shippingResponse.error || 'Failed to validate shipping address');
+        setError(shippingResponse.error || 'Failed to calculate shipping');
+        return;
       }
 
-      // Then submit the order
-      const orderResponse = await submitOrder(orderData);
+      // Submit order
+      const orderResponse = await submitOrder({
+        line_items: shippingLineItems,
+        shipping_method: 1,
+        address_to: addressTo,
+      });
 
       if (!orderResponse.success) {
-        throw new Error(orderResponse.error || 'Failed to create order');
+        setError(orderResponse.error || 'Failed to create order');
+        return;
       }
 
       const order = orderResponse.data;
-
       if (order && order.id) {
         setResult(order);
         clearCart();
-        
-        // Redirect to order detail page after short delay
         setTimeout(() => {
           router.push(`/shop/order/${order.id}`);
         }, 1500);
-      } else {
-        throw new Error('Failed to create Printify order');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit order');
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 

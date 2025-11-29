@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 interface CartItem {
   id: number;
+  productId?: string;  // Printify product ID (string)
   variantId: number;
   title: string;
   price: number;
