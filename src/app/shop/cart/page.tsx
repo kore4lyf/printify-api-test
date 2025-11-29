@@ -55,49 +55,49 @@ export default function CartPage() {
               {/* Items */}
               <div className="space-y-4">
                 {cart.map((item) => (
-                  <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-slate-900 mb-2">{item.title}</h3>
-                        <p className="text-slate-600">${(item.price / 100).toFixed(2)} each</p>
-                      </div>
+                   <div key={`${item.id}-${item.variantId}`} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                       <div className="flex-1">
+                         <h3 className="text-lg font-semibold text-slate-900 mb-2">{item.title}</h3>
+                         <p className="text-slate-600">${(item.price / 100).toFixed(2)} each</p>
+                       </div>
 
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-2 border border-slate-200">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                            className="hover:bg-slate-200 rounded-lg"
-                          >
-                            <Minus className="h-4 w-4 text-slate-600" />
-                          </Button>
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
-                            className="w-12 text-center border-0 bg-transparent font-medium"
-                            min="1"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="hover:bg-slate-200 rounded-lg"
-                          >
-                            <Plus className="h-4 w-4 text-slate-600" />
-                          </Button>
-                        </div>
+                       <div className="flex items-center gap-4">
+                         <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-2 border border-slate-200">
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             onClick={() => updateQuantity(item.id, item.variantId, Math.max(1, item.quantity - 1))}
+                             className="hover:bg-slate-200 rounded-lg"
+                           >
+                             <Minus className="h-4 w-4 text-slate-600" />
+                           </Button>
+                           <Input
+                             type="number"
+                             value={item.quantity}
+                             onChange={(e) => updateQuantity(item.id, item.variantId, parseInt(e.target.value) || 1)}
+                             className="w-12 text-center border-0 bg-transparent font-medium"
+                             min="1"
+                           />
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             onClick={() => updateQuantity(item.id, item.variantId, item.quantity + 1)}
+                             className="hover:bg-slate-200 rounded-lg"
+                           >
+                             <Plus className="h-4 w-4 text-slate-600" />
+                           </Button>
+                         </div>
 
-                        <div className="w-24 text-right">
-                          <p className="text-sm text-slate-600 mb-1">Subtotal</p>
-                          <p className="text-lg font-bold text-slate-900">${(item.price * item.quantity / 100).toFixed(2)}</p>
-                        </div>
+                         <div className="w-24 text-right">
+                           <p className="text-sm text-slate-600 mb-1">Subtotal</p>
+                           <p className="text-lg font-bold text-slate-900">${(item.price * item.quantity / 100).toFixed(2)}</p>
+                         </div>
 
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeFromCart(item.id)}
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => removeFromCart(item.id, item.variantId)}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
                         >
                           <Trash2 className="h-4 w-4" />

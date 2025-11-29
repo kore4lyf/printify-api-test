@@ -189,7 +189,7 @@ export default function CheckoutPage() {
                   {/* Items */}
                   <div className="space-y-2 pb-4 border-b border-slate-200">
                     {cart.map((item) => (
-                      <div key={item.id} className="flex justify-between text-sm">
+                       <div key={`${item.id}-${item.variantId}`} className="flex justify-between text-sm">
                         <span className="text-slate-600">
                           {item.title} x {item.quantity}
                         </span>

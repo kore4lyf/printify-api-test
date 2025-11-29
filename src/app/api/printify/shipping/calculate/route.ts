@@ -3,7 +3,7 @@ import { printify } from '@/lib/printify';
 
 interface ShippingCalculationRequest {
   line_items: Array<{
-    product_id: string;
+    product_id: number | string;
     variant_id: number;
     quantity: number;
   }>;
@@ -39,8 +39,13 @@ export async function POST(request: NextRequest) {
     }
     
     // Calculate shipping using Printify API
+    // Ensure product_id is a string as expected by Printify API
     const shippingResult = await printify.orders.calculateShipping({
-      line_items: body.line_items,
+      line_items: body.line_items.map(item => ({
+        product_id: String(item.product_id),
+        variant_id: item.variant_id,
+        quantity: item.quantity
+      })),
       address_to: body.address_to
     });
     

@@ -206,6 +206,7 @@ export default function ProductDetailPage() {
               <Button
                 onClick={() => selectedVariant && addToCart({
                   id: parseInt(product.id, 10),
+                  variantId: selectedVariant,
                   title: product.title,
                   price: selectedPrice,
                   quantity

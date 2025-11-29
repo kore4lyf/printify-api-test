@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 interface CartItem {
   id: number;
+  variantId: number;
   title: string;
   price: number;
   quantity: number;
@@ -12,8 +13,8 @@ interface CartItem {
 interface CartContextType {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
-  updateQuantity: (id: number, quantity: number) => void;
-  removeFromCart: (id: number) => void;
+  updateQuantity: (id: number, variantId: number, quantity: number) => void;
+  removeFromCart: (id: number, variantId: number) => void;
   clearCart: () => void;
 }
 
@@ -25,7 +26,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       try {
         const savedCart = localStorage.getItem('printify-cart');
-        return savedCart ? JSON.parse(savedCart) : [];
+        if (!savedCart) return [];
+        
+        const parsedCart = JSON.parse(savedCart);
+        // Validate that all items have required variantId field
+        // If old cart items exist without variantId, clear the cart
+        const isValid = Array.isArray(parsedCart) && parsedCart.every((item: any) => 
+          item.id && item.variantId && item.title && item.price !== undefined && item.quantity
+        );
+        
+        return isValid ? parsedCart : [];
       } catch (error) {
         console.error('Error loading cart from localStorage:', error);
         return [];
@@ -47,24 +57,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (item: CartItem) => {
     setCart((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
+      const existing = prev.find((i) => i.id === item.id && i.variantId === item.variantId);
       if (existing) {
-        return prev.map((i) => i.id === item.id ? { ...i, quantity: i.quantity + (item.quantity || 1) } : i);
+        return prev.map((i) => i.id === item.id && i.variantId === item.variantId ? { ...i, quantity: i.quantity + (item.quantity || 1) } : i);
       }
       return [...prev, { ...item, quantity: item.quantity || 1 }];
     });
   };
 
-  const removeFromCart = (id: number) => {
-    setCart((prev) => prev.filter((i) => i.id !== id));
+  const removeFromCart = (id: number, variantId: number) => {
+    setCart((prev) => prev.filter((i) => !(i.id === id && i.variantId === variantId)));
   };
 
-  const updateQuantity = (id: number, quantity: number) => {
+  const updateQuantity = (id: number, variantId: number, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(id);
+      removeFromCart(id, variantId);
       return;
     }
-    setCart((prev) => prev.map((i) => i.id === id ? { ...i, quantity } : i));
+    setCart((prev) => prev.map((i) => i.id === id && i.variantId === variantId ? { ...i, quantity } : i));
   };
 
   const clearCart = () => {

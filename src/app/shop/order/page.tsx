@@ -9,12 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCart } from '../cart-context';
 import { Loader2 } from 'lucide-react';
-import { usePrintifyOrder } from '@/lib/printify-utils/hooks';
+import { usePrintifyOrder, usePrintifyShipping } from '@/lib/printify-utils/hooks';
 
 export default function OrderPage() {
   const { cart, clearCart } = useCart();
   const router = useRouter();
   const { submitOrder, isSubmitting } = usePrintifyOrder();
+  const { calculateShipping, isCalculating } = usePrintifyShipping();
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
@@ -65,27 +66,48 @@ export default function OrderPage() {
     
     try {
       // Build order data matching Printify API requirements
-      const orderData = {
-        line_items: cart.map((item) => ({
-          product_id: item.id,
-          variant_id: item.id,
-          quantity: item.quantity,
-        })),
-        shipping_method: 1,
-        address_to: {
-          first_name: form.first_name,
-          last_name: form.last_name,
-          email: form.email,
-          phone: form.phone || '',
-          address1: form.address1,
-          address2: form.address2 || '',
-          city: form.city,
-          region: form.region,
-          zip: form.zip,
-          country: form.country,
-        },
+      const lineItems = cart.map((item) => ({
+        product_id: item.id,
+        variant_id: item.variantId,
+        quantity: item.quantity,
+      }));
+
+      const shippingLineItems = lineItems.map((item) => ({
+        product_id: String(item.product_id),
+        variant_id: item.variant_id,
+        quantity: item.quantity,
+      }));
+
+      const addressTo = {
+        first_name: form.first_name,
+        last_name: form.last_name,
+        email: form.email,
+        phone: form.phone || '',
+        address1: form.address1,
+        address2: form.address2 || '',
+        city: form.city,
+        region: form.region,
+        zip: form.zip,
+        country: form.country,
       };
 
+      // First calculate shipping to validate address (same as campaigns)
+      const shippingResponse = await calculateShipping(
+        shippingLineItems,
+        addressTo
+      );
+
+      const orderData = {
+        line_items: lineItems,
+        shipping_method: 1,
+        address_to: addressTo,
+      };
+
+      if (!shippingResponse.success) {
+        throw new Error(shippingResponse.error || 'Failed to validate shipping address');
+      }
+
+      // Then submit the order
       const orderResponse = await submitOrder(orderData);
 
       if (!orderResponse.success) {
@@ -128,7 +150,7 @@ export default function OrderPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {cart.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center">
+                   <div key={`${item.id}-${item.variantId}`} className="flex justify-between items-center">
                     <div>
                       <p className="font-medium">{item.title}</p>
                       <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
@@ -272,9 +294,9 @@ export default function OrderPage() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={isSubmitting} className="w-full h-12">
-                {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : 'Complete Order'}
-              </Button>
+              <Button type="submit" disabled={isSubmitting || isCalculating} className="w-full h-12">
+                 {isSubmitting || isCalculating ? <Loader2 className="animate-spin mr-2" /> : 'Complete Order'}
+               </Button>
             </form>
             {error && (
               <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
