@@ -9,10 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCart } from '../cart-context';
 import { Loader2 } from 'lucide-react';
+import { usePrintifyOrder } from '@/lib/printify-utils/hooks';
 
 export default function OrderPage() {
   const { cart, clearCart } = useCart();
   const router = useRouter();
+  const { submitOrder, isSubmitting } = usePrintifyOrder();
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
@@ -26,7 +28,6 @@ export default function OrderPage() {
     country: 'US'
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,7 +61,6 @@ export default function OrderPage() {
       return;
     }
 
-    setLoading(true);
     setError(null);
     
     try {
@@ -86,15 +86,13 @@ export default function OrderPage() {
         },
       };
 
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData),
-      });
+      const orderResponse = await submitOrder(orderData);
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create order');
+      if (!orderResponse.success) {
+        throw new Error(orderResponse.error || 'Failed to create order');
+      }
 
+      const data = orderResponse.data;
       setResult(data);
       clearCart();
       
@@ -104,8 +102,6 @@ export default function OrderPage() {
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit order');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -271,8 +267,8 @@ export default function OrderPage() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={loading} className="w-full h-12">
-                {loading ? <Loader2 className="animate-spin mr-2" /> : 'Complete Order'}
+              <Button type="submit" disabled={isSubmitting} className="w-full h-12">
+                {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : 'Complete Order'}
               </Button>
             </form>
             {error && (
